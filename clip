@@ -1,0 +1,79 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import sys
+import subprocess
+
+clipboard_file_path = f'{os.path.expanduser("~")}/.local/share/pop-launcher/plugins/clip/clipboard.txt'
+
+def getClipboardData():
+    p = subprocess.Popen(['xclip','-selection', 'clipboard', '-o'], stdout=subprocess.PIPE)
+    retcode = p.wait()
+    data = p.stdout.read().decode('utf-8')
+    return data
+
+class App(object):
+    def __init__(self):
+        self.match = None
+
+    def activate(self, index):
+        if not self.matches:
+            return
+        
+        with os.popen('xclip -selection clipboard', 'w') as stream:
+            stream.write(self.matches[index])
+            stream.flush()
+
+        sys.stdout.write('"Close"\n')
+        sys.stdout.flush()
+
+    def search(self, query):
+        if os.path.exists(clipboard_file_path):
+            with open(clipboard_file_path, 'r', encoding='utf-8') as f:
+                clipboard = json.load(f)
+        else:
+            clipboard = []
+
+        new_clipboard_entry = getClipboardData()
+
+        if new_clipboard_entry not in clipboard:
+            clipboard.append(new_clipboard_entry)
+
+        with open(clipboard_file_path, 'w', encoding='utf-8') as f:
+            json.dump(clipboard, f, ensure_ascii=False)
+        
+        self.matches = clipboard
+
+        for index, item in enumerate(self.matches):
+            sys.stdout.write(json.dumps({
+                'Append': {
+                    'id': index,
+                    'name': item,
+                    'description': 'Select clipboard item',
+                    'keywords': None,
+                    'icon': None,
+                    'exec': None,
+                    'window': None
+                }
+            }))
+            sys.stdout.write('\n')
+
+        sys.stdout.write('"Finished"\n')
+        sys.stdout.flush()
+
+def main():
+    app = App()
+
+    for line in sys.stdin:
+        try:
+            request = json.loads(line)
+            if 'Search' in request:
+                app.search(request['Search'])
+            elif 'Activate' in request:
+                app.activate(request['Activate'])
+        except json.decoder.JSONDecodeError:
+            pass
+
+if __name__ == '__main__':
+    main()
