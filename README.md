@@ -13,3 +13,7 @@ For system-wide installation, download and install the deb file
 
 ### Usage
 In pop launcher type clip, this will store the current clipboard item if it is not already stored. Typing clip followed by a query searches for the closest matching clipboard item. Pressing enter copies the result into the clipboard.
+
+### Known issues
+Currently no way to add items to the clipboard withouth having to activate the plugin first, causes missed items\
+For example, copying a word, and then copying another word before activating the plugin results in the first word being missed
